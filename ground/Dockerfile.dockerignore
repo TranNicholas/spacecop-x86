@@ -1,0 +1,14 @@
+# Keep the ground image context to the supplied plugin.
+*
+!upstream/
+!upstream/spacecop-demo/
+!upstream/spacecop-demo/gsw/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/**
+!ground/
+!ground/openc3-cosmos-cfs.gemspec
+!ground/procedures/
+!ground/procedures/arm.py
+**/__pycache__/
+**/*.pyc
+**/.git/

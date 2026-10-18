@@ -1,0 +1,93 @@
+# Independent capture, witness, and indexing UI. These establish and present
+# evidence; they are not part of the SpaceCOP detector under evaluation.
+services:
+  # Evaluation-only packet capture in flight's network namespace.
+  capture:
+    image: spacecop-lab/capture:local
+    build:
+      context: ./observer/capture
+      dockerfile: Dockerfile
+      args:
+        APT_SNAPSHOT: ${APT_SNAPSHOT:?set in .env}
+    platform: linux/amd64
+    pull_policy: build
+    network_mode: service:flight
+    cap_drop: [ALL]
+    cap_add: [NET_RAW, SETUID, SETGID]
+    volumes:
+      - capture-data:/evidence
+    depends_on:
+      flight:
+        condition: service_started
+        restart: true
+    stop_signal: SIGINT
+    restart: "no"
+
+  witness-zeek:
+    image: spacecop-lab/zeek:local
+    build:
+      context: .
+      dockerfile: observer/zeek/Dockerfile
+    pull_policy: build
+    network_mode: service:flight
+    cap_drop: [ALL]
+    # Packet capture needs NET_RAW; NET_ADMIN can also affect what it observes.
+    cap_add: [NET_RAW, NET_ADMIN]
+    volumes:
+      - zeek-logs:/var/log/zeek
+    depends_on:
+      flight:
+        condition: service_started
+        restart: true
+    restart: "no"
+
+  security-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.0@sha256:e1e66bfabae0fd03a0a36651a9bb198e7f061e0c99f457a6203b116e053e9cdb
+    networks:
+      default: {}
+      edge: {}
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "127.0.0.1:${LAB_ELASTIC_PORT:?set in .env}:9200"
+    volumes:
+      - security-elastic-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+    restart: "no"
+
+  security-logstash:
+    image: docker.elastic.co/logstash/logstash:8.19.0@sha256:b415db68e8118110589a2440054b96b3cde61e649e0f9be47bd36a6080c02a7b
+    environment:
+      LAB_INSTANCE: ${LAB_INSTANCE:?set in .env}
+      LS_JAVA_OPTS: -Xms384m -Xmx384m
+      XPACK_MONITORING_ENABLED: "false"
+    volumes:
+      - ./observer/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - zeek-logs:/feeds/zeek:ro
+      - mission-data:/feeds/mission:ro
+      - security-logstash-data:/usr/share/logstash/data
+    depends_on:
+      security-elasticsearch:
+        condition: service_healthy
+    restart: "no"
+
+  security-kibana:
+    image: docker.elastic.co/kibana/kibana:8.19.0@sha256:5d5b5ec7d5d247bc1e23857beb64ab81644653e7eeb0dd200624aa2750535f53
+    environment:
+      ELASTICSEARCH_HOSTS: http://security-elasticsearch:9200
+      NODE_OPTIONS: --max-old-space-size=1024
+    networks:
+      default: {}
+      edge: {}
+    ports:
+      - "127.0.0.1:${LAB_KIBANA_PORT:?set in .env}:5601"
+    depends_on:
+      security-elasticsearch:
+        condition: service_healthy
+    restart: "no"

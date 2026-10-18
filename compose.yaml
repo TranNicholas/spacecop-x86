@@ -1,0 +1,48 @@
+name: spacecop-sitl
+
+# Component files use the repository root for every relative path. The resolved
+# model remains one Compose application (`docker compose config`).
+include:
+  - path: ./ground/compose.yaml
+    project_directory: .
+  - path: ./flight/compose.yaml
+    project_directory: .
+  - path: ./observer/compose.yaml
+    project_directory: .
+
+services:
+  # Explicit browser health check; omitted from a normal `docker compose up`.
+  browser-health:
+    image: spacecop-lab/browser:local
+    build:
+      context: ./evaluation/browser
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    pull_policy: build
+    profiles: [health]
+    networks: [default]
+    environment:
+      LAB_URL: http://openc3-traefik:2900
+      LAB_API_PASSWORD: ${LAB_API_PASSWORD:?set the local development password}
+    volumes:
+      - ./evaluation/output/${LAB_INSTANCE:?set in .env}/browser:/evidence
+    depends_on:
+      ground-bootstrap:
+        condition: service_completed_successfully
+
+networks:
+  default:
+    internal: true
+  mission:
+    internal: true
+  edge: {}
+
+volumes:
+  plugins: {}
+  cfdp-rx: {}
+  cfdp-tx: {}
+  mission-data: {}
+  capture-data: {}
+  zeek-logs: {}
+  security-elastic-data: {}
+  security-logstash-data: {}

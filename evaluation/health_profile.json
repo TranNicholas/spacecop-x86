@@ -1,0 +1,26 @@
+{
+  "startup_timeout_seconds": 90,
+  "timeout_seconds": 20,
+  "interface": "PISAT_INT",
+  "arming": {
+    "receiver": "cosmos",
+    "target": "TO_LAB",
+    "command": "TO_DEBUG_ENABLE_OUTPUT_CC",
+    "parameter": "DEST_IP"
+  },
+  "telemetry": [
+    ["SPACECOP", "SPACECOP_HK_TLM"],
+    ["EPS", "EPS_HK_TLM"],
+    ["STPYLD", "STPYLD_HK_TLM"],
+    ["CAMERA", "CAMERA_HK_TLM"],
+    ["SYSMON", "SYSMON_HK_TLM"]
+  ],
+  "round_trip": {
+    "target": "EPS",
+    "command": "NOOP",
+    "packet": "EPS_HK_TLM",
+    "counter": "CommandCount",
+    "delta": 1,
+    "modulus": 256
+  }
+}

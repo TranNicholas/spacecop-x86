@@ -1,0 +1,100 @@
+{
+  "command": [
+    "./core-cpu1"
+  ],
+  "working_directory": "/opt/pisat",
+  "serial_path": "/dev/serial0",
+  "stop_timeout_seconds": 12,
+  "reset_window_seconds": 60,
+  "max_resets": 3,
+  "preload": "/usr/local/lib/spacecop-lab/libumockdev-preload.so.0",
+  "devices": {
+    "basis": "Constant application-contract fixture; timing and distributions not hardware-calibrated",
+    "eps": [
+      {
+        "bus": "/dev/i2c-1",
+        "address": 64,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-1",
+        "address": 65,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-1",
+        "address": 68,
+        "present": true,
+        "volts": 3.8,
+        "milliamps": 120.0
+      },
+      {
+        "bus": "/dev/i2c-1",
+        "address": 69,
+        "present": false,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-3",
+        "address": 64,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-3",
+        "address": 65,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-3",
+        "address": 68,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      },
+      {
+        "bus": "/dev/i2c-3",
+        "address": 69,
+        "present": true,
+        "volts": 4.0,
+        "milliamps": 20.0
+      }
+    ],
+    "payload": {
+      "period_seconds": 1.05,
+      "values": {
+        "temperature": 31.78,
+        "pressure": 979.79,
+        "altitude": 282.41,
+        "humidity": 30.49,
+        "gx": -29.66,
+        "gy": -7.36,
+        "gz": 6.53,
+        "ax": -0.01,
+        "ay": 0.01,
+        "az": 1.15,
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "gps_altitude": 0.0
+      }
+    },
+    "thermal_millidegrees": 42000,
+    "camera": {
+      "latency_seconds": 0.05,
+      "fail": false,
+      "color": [
+        24,
+        72,
+        120
+      ]
+    }
+  }
+}

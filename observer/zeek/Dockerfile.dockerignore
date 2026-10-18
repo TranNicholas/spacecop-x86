@@ -1,0 +1,13 @@
+# Keep the Zeek context to the generator, its definitions, and the site script.
+**
+!upstream/
+!upstream/spacecop-demo/
+!upstream/spacecop-demo/gsw/
+!upstream/spacecop-demo/gsw/cosmos_to_zeek.py
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/targets/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/targets/**
+!observer/
+!observer/zeek/
+!observer/zeek/site.zeek
+!observer/zeek/entrypoint.sh

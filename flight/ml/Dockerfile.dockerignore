@@ -1,0 +1,23 @@
+# Keep the ML context restricted to upstream parser and model inputs.
+**
+!flight/
+!flight/ml/
+!flight/ml/server_main.rs
+!upstream/
+!upstream/spacecop-demo/
+!upstream/spacecop-demo/spacecop_ml/
+!upstream/spacecop-demo/spacecop_ml/Cargo.toml
+!upstream/spacecop-demo/spacecop_ml/Cargo.lock
+!upstream/spacecop-demo/spacecop_ml/src/
+!upstream/spacecop-demo/spacecop_ml/src/**
+!upstream/spacecop-demo/spacecop_ml/scripts/
+!upstream/spacecop-demo/spacecop_ml/scripts/**
+!upstream/spacecop-demo/spacecop_ml/scml_models/
+!upstream/spacecop-demo/spacecop_ml/scml_models/**
+!upstream/spacecop-demo/gsw/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/targets/
+!upstream/spacecop-demo/gsw/openc3-cosmos-cfs/targets/**
+**/.git
+**/__pycache__
+**/*.pyc

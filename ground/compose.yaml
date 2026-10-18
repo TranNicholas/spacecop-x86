@@ -1,0 +1,112 @@
+# COSMOS stays on its supplied deployment; this file pins the vendor services,
+# installs the supplied PiSat plugin, and publishes the operator web/API boundary.
+include:
+  - path: "https://github.com/OpenC3/cosmos-project.git#ad13ab98770aab91f71daa88bfd92b77d5d0d89f:compose.yaml"
+
+x-ground-env: &ground-env
+  OPENC3_DEMO: ""
+  OPENC3_ALLOW_HTTP: "1"
+  OPENC3_EXTERNAL_URL: http://localhost:${LAB_UI_PORT:?set in .env}
+  PYTHONPATH: /openc3/python
+
+x-ground-bootstrap-env: &ground-bootstrap-env
+  <<: *ground-env
+  OPENC3_API_PASSWORD: ${LAB_API_PASSWORD:?set the local development password}
+  OPENC3_API_HOSTNAME: openc3-cosmos-cmd-tlm-api
+  OPENC3_API_PORT: "2901"
+  OPENC3_API_SCHEMA: http
+  GEM_HOME: /gems
+  PYTHONUSERBASE: /gems/python_packages
+
+x-redis-image: &redis-image openc3inc/openc3-redis:7.2.1@sha256:4f95df8a875092a563e699bef95bac1ab211a8e5cf679725ef6ee360e6a4276a
+x-api-image: &api-image openc3inc/openc3-cosmos-cmd-tlm-api:7.2.1@sha256:8611c1e3b2db2dc07182f78ee849271b36a84714463a59d05a1062aff08c514a
+
+services:
+  # Pin every image inherited from the remote COSMOS application.
+  openc3-buckets:
+    image: openc3inc/openc3-buckets:7.2.1@sha256:c15c647f278859559407b7a116b59228e81830259498857c7b22b65bb2ad8e5f
+    restart: "no"
+  openc3-tsdb:
+    image: openc3inc/openc3-tsdb:7.2.1@sha256:d5cfeca9bdbfe24c7a233336e6d81f9a6e97a01ff00e7dd0b8556e3a71e8104a
+    restart: "no"
+  openc3-redis:
+    image: *redis-image
+    restart: "no"
+  openc3-redis-ephemeral:
+    image: *redis-image
+    restart: "no"
+  openc3-cosmos-cmd-tlm-api:
+    image: *api-image
+    environment: *ground-env
+    restart: "no"
+    volumes:
+      - plugins:/plugins
+  openc3-cosmos-script-runner-api:
+    image: openc3inc/openc3-cosmos-script-runner-api:7.2.1@sha256:c39792fa226e9c04fe244603b8615f918bcbdb8cbeeb85e89b9926ad06baf2f4
+    environment: *ground-env
+    restart: "no"
+    volumes:
+      - plugins:/plugins
+  openc3-operator:
+    image: openc3inc/openc3-operator:7.2.1@sha256:6b87d624f9f2698b6f30af11c1ecdb42458e22b252591240a1f9d59afa9595ec
+    environment: *ground-env
+    networks:
+      default: {}
+      mission:
+        aliases: [cosmos]
+    restart: "no"
+    volumes:
+      - plugins:/plugins
+      - cfdp-rx:/openc3/lib/openc3/operators/received_files
+      - cfdp-tx:/openc3/lib/openc3/operators/send_files
+  openc3-traefik:
+    image: openc3inc/openc3-traefik:7.2.1@sha256:16a36f031a0b0e273e8ae803b7170bf05104431603a92776aa1864126d9f2604
+    environment: *ground-env
+    networks:
+      default: {}
+      edge: {}
+    ports: !override
+      - "127.0.0.1:${LAB_UI_PORT:?set in .env}:2900"
+    restart: "no"
+  openc3-cosmos-init:
+    image: openc3inc/openc3-cosmos-init:7.2.1@sha256:10ddf4e377f08b1203cd36ce2cf7509655bd89135886ed4522bf991c665d1171
+    environment: *ground-env
+    restart: "no"
+    volumes:
+      - plugins:/plugins
+
+  # Prepare shared volumes, wait for stock initialization, then load the plugin.
+  ground-prepare:
+    image: *api-image
+    user: "0:0"
+    network_mode: none
+    entrypoint: ["chown", "1001:1001", "/plugins", "/rx", "/tx"]
+    volumes:
+      - plugins:/plugins
+      - cfdp-rx:/rx
+      - cfdp-tx:/tx
+    restart: "no"
+
+  ground-bootstrap:
+    # Inherit the vendor API service's connection and runtime settings.
+    extends:
+      service: openc3-cosmos-cmd-tlm-api
+    image: spacecop-lab/ground:local
+    build:
+      context: .
+      dockerfile: ground/Dockerfile
+    pull_policy: build
+    read_only: false
+    networks:
+      default: {}
+      mission: {}
+    environment: *ground-bootstrap-env
+    volumes: !override
+      - plugins:/plugins
+      - openc3-gems-v:/gems
+    depends_on: !override
+      openc3-cosmos-init:
+        condition: service_completed_successfully
+      ground-prepare:
+        condition: service_completed_successfully
+    restart: "no"

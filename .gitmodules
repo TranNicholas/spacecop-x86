@@ -1,0 +1,4 @@
+[submodule "upstream/spacecop-demo"]
+	path = upstream/spacecop-demo
+	url = https://github.com/TranNicholas/spacecop-demo.git
+	branch = sitl

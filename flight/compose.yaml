@@ -1,0 +1,54 @@
+# PiSat flight and its original ML process share one network and PID namespace.
+services:
+  flight:
+    image: ${FLIGHT_IMAGE:?set in .env}
+    build:
+      context: .
+      dockerfile: flight/pisat/Dockerfile
+      args:
+        APT_SNAPSHOT: ${APT_SNAPSHOT:?set in .env}
+        SIMULATION: ${FLIGHT_SIMULATION:?set in .env}
+        BUILDTYPE: debug # Upstream's default; release is a separate variant.
+        ENABLE_ASAN: "false"
+    pull_policy: build
+    platform: ${FLIGHT_PLATFORM:?set in .env}
+    ipc: shareable
+    sysctls:
+      fs.mqueue.msg_max: "64"
+    networks:
+      mission:
+        aliases: [flight]
+    # Reference-profile departures from the Pi: host-sized /proc and resources,
+    # no CPU or memory limits, Docker's default security profile, and SYS_NICE.
+    cap_add: [SYS_NICE]
+    ulimits:
+      rtprio: 99
+      msgqueue: 134217728
+    # Flight code stays image-owned; only mission state persists.
+    # The upstream read-only/noexec mount recommendations are not applied.
+    volumes:
+      - mission-data:/var/pisat
+    stop_grace_period: 15s
+    restart: "no"
+    logging: &flight-logging
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  ml:
+    # The original ML process reconnects independently at both endpoints.
+    image: ${ML_IMAGE:?set in .env}
+    build:
+      context: .
+      dockerfile: flight/ml/Dockerfile
+      args:
+        APT_SNAPSHOT: ${APT_SNAPSHOT:?set in .env}
+    pull_policy: build
+    platform: ${FLIGHT_PLATFORM:?set in .env}
+    network_mode: service:flight
+    pid: service:flight
+    depends_on:
+      flight:
+        condition: service_started
+        restart: true
+    restart: "no"
+    logging: *flight-logging
